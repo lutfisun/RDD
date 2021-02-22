@@ -1,0 +1,131 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{relsize}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage[sc]{mathpazo}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+\usepackage{url}
+\usepackage{fancybox}
+\usepackage{tikz}
+\usepackage{bm}
+%\usepackage[unicode=true,pdfusetitle,
+% bookmarks=true,bookmarksnumbered=true,bookmarksopen=true,bookmarksopenlevel=2,
+% breaklinks=false,pdfborder={0 0 1},backref=false,colorlinks=false]
+%\hypersetup{
+ %pdfstartview={XYZ null null 1}}
+\usepackage{breakurl}
+\usepackage{setspace}
+\setlength{\textheight}{8.9in}
+%\setbeamercolor{upcol}{fg=black,bg=gray}
+%\setbeamercolor{lowcol}{fg=black,bg=gray!40}
+\newcommand{\brown}[1]{\textcolor[rgb]{0.60,0.30,0.10}{#1}}
+\newcommand{\sky}[1]{\textcolor[rgb]{0.00,0.38,0.62}{#1}}
+\newcommand{\red}[1]{\textcolor[rgb]{0.90,0.00,0.10}{#1}}
+\newcommand{\green}[1]{\textcolor[rgb]{0.00,0.70,0.30}{#1}}
+\newcommand{\blue}[1]{\textcolor[rgb]{0.00,0.00,0.80}{#1}}
+\newcommand{\purple}[1]{\textcolor[rgb]{0.50,0.00,0.50}{#1}}
+\def\thickhrulefill{\leavevmode \leaders \hrule height 1ex \hfill \kern \z@}
+\usepackage{Sweave}
+\begin{document}
+\input{LutfiSun_A3-concordance}
+%\SweaveOpts{concordance=TRUE}
+%\SweaveOpts{concordance=TRUE}
+%\SweaveOpts{concordance=TRUE}
+%You need to change the options of Rstudio from Sweave to knitr to obtain 
+% graphicsby doing: Rstudio->Preference->Sweave/pdf->change Sweave to Knitr
+%Sweave2knitr("test1.Rww",output=)
+
+\begin{center}
+  \includegraphics[width=1.75in]{ut_logo.png} 
+\hrule height 1ex \vspace{2 pt} \hrule
+\mbox{}\\
+\mbox{}\\
+{\large
+\textbf{ECO395M  \hfill Assignment 3 – RDD Replication \hfill  Lutfi Sun}\\
+\textbf{\hfill \today}}\\
+\mbox{}
+ 
+ \vspace{2 pt} \hrule \vspace{2 pt} \hrule height 1ex
+\end{center}
+% 
+\vspace{0.5cm}
+
+\newenvironment{solution}
+  {\renewcommand\qedsymbol{$\blacksquare$}\begin{proof}[Solution]}
+  {\end{proof}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Part 1: Github Repo and Summary}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\textbf{1. Github Repository with Subdirectories and Data}
+\begin{itemize}
+  \item https://github.com/lutfisun/RDD.git
+\end{itemize}
+\textbf{2. Summarize Hansen AER}
+\newline
+\newline
+What is his research question? 
+\begin{itemize}
+  \item yo
+\end{itemize}
+What data does he use?  
+\begin{itemize}
+  \item yo
+\end{itemize}
+What is his research design, or “identification strategy”?  
+\begin{itemize}
+  \item yo
+\end{itemize}
+What are his conclusions?
+\begin{itemize}
+  \item yo
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section*{Part 2: Reproducing Hansen's Results}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\textbf{3. In the United States, an officer can arrest a driver if after giving them a blood alcohol content (BAC) test they learn the driver had a BAC of 0.08 or higher. We will only focus on the 0.08 BAC cutoff. We will be ignoring the 0.15 cutoff for all this analysis. Create a dummy equaling 1 if bac1>= 0.08 and 0 otherwise in your do file or R file.}
+\begin{itemize}
+  \item yo
+\end{itemize}
+{\tiny \setstretch{0.01} .}\\
+\textbf{4. The first thing to do in any RDD is look at the raw data and see if there’s any evidence for manipulation (“sorting on the running variable”). If people were capable of manipulating their blood alcohol content (bac1), describe the test we would use to check for this.  Now evaluate whether you see this in these data?  Either recreate Figure 1 using the bac1 variable as your measure of blood alcohol content or use your own density test from software.  Do you find evidence for sorting on the running variable? Explain your results.  Compare what you found to what Hansen found.}
+\newline
+\begin{itemize}
+  \item yo.
+\end{itemize}
+{\tiny \setstretch{0.01} .}\\
+\textbf{5. The second thing we need to do is check for covariate balance. Recreate Table 2 Panel A but only white male, age and accident (acc) as dependent variables.  Use your equation 1) for this. Are the covariates balanced at the cutoff?  It’s okay if they are not exactly the same as Hansen’s.}
+\newline
+\begin{itemize}
+  \item yo
+\end{itemize}
+{\tiny \setstretch{0.01} .}\\
+\textbf{6. Recreate Figure 2 panel A-D. You can use the -cmogram- command in Stata to do this. Fit both linear and quadratic with confidence intervals. Discuss what you find and compare it with Hansen’s paper.}
+\newline
+\begin{itemize}
+  \item yo
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
