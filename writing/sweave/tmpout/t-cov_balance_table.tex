@@ -1,0 +1,9 @@
+\begin{Schunk}
+\begin{Sinput}
+ lm_01 <-  lm(male ~ bac1 + dui08 + bac1*dui08, data = hansen, weights = weights)
+ lm_02 <-  lm(white ~ bac1 + dui08 + bac1*dui08, data = hansen, weights = weights)
+ lm_03 <-  lm(acc ~ bac1 + dui08 + bac1*dui08, data = hansen, weights = weights)
+ lm_04 <-  lm(aged ~ bac1 + dui08 + bac1*dui08, data = hansen, weights = weights)
+ stargazer(lm_01, lm_02, lm_03, lm_04)
+\end{Sinput}
+\end{Schunk}

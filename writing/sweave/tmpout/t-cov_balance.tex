@@ -1,0 +1,37 @@
+\begin{Schunk}
+\begin{Sinput}
+ hansen$bac_centered <- hansen$bac1 - 0.08 
+ # the slopes would not change whether we center or not (the intercept would)
+ # so i decided not to center. it'll make it easier for predictions and graphs 
+ weights <- rdd::kernelwts(hansen$bac1, 
+                           center = 0.08, 
+                           bw = .05, 
+                           kernel = "rectangular")
+ lm_1 <- lm_robust(male ~  bac1 + dui08 + bac1*dui08, data = hansen, weights = weights)
+ lm_2 <- lm_robust(white ~ bac1 + dui08 + bac1*dui08, data = hansen, weights = weights)
+ lm_3 <- lm_robust(aged ~ bac1 + dui08 + bac1*dui08, data = hansen, weights = weights)
+ lm_4 <- lm_robust(acc ~ bac1 + dui08 + bac1*dui08, data = hansen, weights = weights)
+ texreg::screenreg(list(lm_1, lm_2, lm_3, lm_4), 
+                   custom.model.names = c("Male", "White", "Age", "Accident"))
+\end{Sinput}
+\begin{Soutput}
+===========================================================================
+             Male           White          Age               Accident      
+---------------------------------------------------------------------------
+(Intercept)       0.80 *         0.84 *        39.45 *            0.17 *   
+             [ 0.77; 0.83]  [ 0.81; 0.87]  [ 38.51;  40.40]  [ 0.15;  0.20]
+bac1             -0.21           0.08         -69.16 *           -1.10 *   
+             [-0.68; 0.26]  [-0.34; 0.50]  [-83.32; -55.01]  [-1.46; -0.73]
+dui08            -0.02           0.00          -6.22 *           -0.15 *   
+             [-0.06; 0.02]  [-0.03; 0.04]  [ -7.37;  -5.08]  [-0.18; -0.12]
+bac1:dui08        0.31           0.02          76.05 *            1.89 *   
+             [-0.21; 0.82]  [-0.44; 0.47]  [ 60.67;  91.42]  [ 1.49;  2.29]
+---------------------------------------------------------------------------
+R^2               0.00           0.00           0.00              0.00     
+Adj. R^2          0.00           0.00           0.00              0.00     
+Num. obs.    214558         214558         214558            214558        
+RMSE              0.00           0.00           0.02              0.00     
+===========================================================================
+* Null hypothesis value outside the confidence interval.
+\end{Soutput}
+\end{Schunk}

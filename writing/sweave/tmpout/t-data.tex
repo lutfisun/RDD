@@ -1,0 +1,6 @@
+\begin{Schunk}
+\begin{Sinput}
+ hansen <- read_dta("../data/hansen_dwi.dta")
+ hansen$dui08 <- ifelse(hansen$bac1 >= 0.08, 1, 0)
+\end{Sinput}
+\end{Schunk}

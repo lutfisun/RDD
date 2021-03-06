@@ -1,0 +1,19 @@
+\begin{Schunk}
+\begin{Sinput}
+ grid_bac <- hansen %>%
+   mutate(bacbin = cut(bac1, breaks = 
+                         seq(from = -0.01, to = 4.01, by = 0.01))) %>%
+   group_by(bacbin) %>%
+   summarize(bac1 = mean(bac1, na.rm = TRUE),
+             mean_male = mean(male, na.rm = TRUE),
+             mean_white = mean(white, na.rm = TRUE),
+             mean_age = mean(aged, na.rm = TRUE),
+             mean_acc = mean(acc, na.rm = TRUE))
+ grid_bac$dui08 <- ifelse(grid_bac$bac1 >= 0.08, 1, 0)
+ pred_male <- predict(lm_01, grid_bac, interval="prediction")
+ pred_white <- predict(lm_02, grid_bac, interval="prediction")
+ pred_age <- predict(lm_03, grid_bac, interval="prediction")
+ pred_acc <- predict(lm_04, grid_bac, interval="prediction")
+ 
+\end{Sinput}
+\end{Schunk}

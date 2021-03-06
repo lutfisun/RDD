@@ -1,0 +1,30 @@
+\begin{Schunk}
+\begin{Sinput}
+ par(mfrow=c(2,2))
+ plot(grid_bac$bac1, grid_bac$mean_male,
+      main = "Panel A. Male - Local Quad",
+      xlab = "bac level", ylab = "percantage with accident")
+ lines(locfit(hansen$male ~ 
+                lp(hansen$bac1, nn=0, h=0.05, deg=2)), col=5)
+ abline(v = 0.08, col= 1)
+ plot(grid_bac$bac1, grid_bac$mean_white,
+      main = "Panel B. White - Local Quad",
+      xlab = "bac level", ylab = "percantage with accident")
+ lines(locfit(hansen$white ~ 
+                lp(hansen$bac1, nn=0, h=0.05, deg=2)), col=5)
+ abline(v = 0.08, col= 1)
+ plot(grid_bac$bac1, grid_bac$mean_age,
+      main = "Panel C. Age - Local Quad",
+      xlab = "bac level", ylab = "percantage with accident")
+ lines(locfit(hansen$aged ~ 
+                lp(hansen$bac1, nn=0, h=0.05, deg=2)), col=5)
+ abline(v = 0.08, col= 1)
+ plot(grid_bac$bac1, grid_bac$mean_acc,
+      main = "Panel D. Accident - Local Quad",
+      xlab = "bac level", ylab = "percantage with accident")
+ lines(locfit(hansen$acc ~ 
+                lp(hansen$bac1, nn=0, h=0.05, deg=2)), col=5)
+ abline(v = 0.08, col= 1)
+ 
+\end{Sinput}
+\end{Schunk}

@@ -1,0 +1,46 @@
+\begin{Schunk}
+\begin{Sinput}
+ par(mfrow=c(2,2))
+ plot(grid_bac$bac1, grid_bac$mean_male,
+      main = "Panel A. Male - Linear",
+      xlab = "bac level", ylab = "percentage male")
+ polygon(c(rev(grid_bac$bac1), grid_bac$bac1), 
+         c(rev(pred_male[ ,3]), pred_male[ ,2]), 
+         col=adjustcolor("grey80",alpha.f=0.5), border = NA)
+ lines(grid_bac$bac1, pred_male[,1], col=4)
+ lines(grid_bac$bac1, pred_male[,2], lty = 'dashed', col=2)
+ lines(grid_bac$bac1, pred_male[,3], lty = 'dashed', col=2)
+ abline(v = 0.08, col= 1)
+ plot(grid_bac$bac1, grid_bac$mean_white,
+      main = "Panel B. White - Linear",
+      xlab = "bac level", ylab = "percentage white")
+ polygon(c(rev(grid_bac$bac1), grid_bac$bac1), 
+         c(rev(pred_white[ ,3]), pred_white[ ,2]), 
+         col=adjustcolor("grey80",alpha.f=0.5), border = NA)
+ lines(grid_bac$bac1, pred_white[,1], col=4)
+ lines(grid_bac$bac1, pred_white[,2], lty = 'dashed', col=2)
+ lines(grid_bac$bac1, pred_white[,3], lty = 'dashed', col=2)
+ abline(v = 0.08, col= 1)
+ plot(grid_bac$bac1, grid_bac$mean_age,
+      main = "Panel C. Age - Linear",
+      xlab = "bac level", ylab = "average age")
+ polygon(c(rev(grid_bac$bac1), grid_bac$bac1), 
+         c(rev(pred_age[ ,3]), pred_age[ ,2]), 
+         col=adjustcolor("grey80",alpha.f=0.5), border = NA)
+ lines(grid_bac$bac1, pred_age[,1], col=4)
+ lines(grid_bac$bac1, pred_age[,2], lty = 'dashed', col=2)
+ lines(grid_bac$bac1, pred_age[,3], lty = 'dashed', col=2)
+ abline(v = 0.08, col= 1)
+ plot(grid_bac$bac1, grid_bac$mean_acc,
+      main = "Panel D. Accident - Linear",
+      xlab = "bac level", ylab = "percantage with accident")
+ polygon(c(rev(grid_bac$bac1), grid_bac$bac1), 
+         c(rev(pred_acc[ ,3]), pred_acc[ ,2]), 
+         col=adjustcolor("grey80",alpha.f=0.5), border = NA)
+ lines(grid_bac$bac1, pred_acc[,1], col=4)
+ lines(grid_bac$bac1, pred_acc[,2], lty = 'dashed', col=2)
+ lines(grid_bac$bac1, pred_acc[,3], lty = 'dashed', col=2)
+ abline(v = 0.08, col= 1)
+ 
+\end{Sinput}
+\end{Schunk}

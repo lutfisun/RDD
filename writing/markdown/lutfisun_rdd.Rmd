@@ -1,0 +1,410 @@
+---
+title: "RDD Replication Assignment"
+author: "Lutfi Sun"
+date: "2/21/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Part 1: Github Repo and Summary 
+
+**1. Github Repository with Subdirectories and Data**
+
+* https://github.com/lutfisun/RDD.git 
+
+**2. Summarize Hansen AER**
+
+* What is his research question?  
+    + Do the legal thresholds of 0.08 and 0.15 in Blood Alcohol Content (BAC) level effectively reduce drunk driving?
+
+* What data does he use?  
+    + Hansen uses Washington State Administrative Records. The original data includes 512,964 Driving Under Influence (DUI) stops from 1995 to 2011.
+    + He utilizes a subset of this data (146,626) from 1999 to 2007 on stops of individuals over 21.
+    + He focuses on post 1999 because thresholds changed in 1999 and on those above 21 because cutoffs are different for those below legal drinking age.
+    
+* What is his research design, or “identification strategy”?  
+    + His identification strategy is a Local Liner Regression Discontinuity Design with Rectangular Kernel. He wants to show there is a significant difference in behavior between those slightly above either threshold and those slightly below.
+    + Identification Assumption 1: It is by random chance for someone to be barely below or barely above the threshold. To support this claim, Hansen plots distribution of BAC levels (Figure 1). The distribution shows no sign of endogenous sorting, which implies people near the cutoffs do not self sort (or at least, there is no evidence that they do).
+    + Identification Assumption 2: Police do not endogenously test people around the thresholds. To support this claim, table 2 shows predetermined characteristics such as race or age don't have much to do with being above or below the BAC thresholds.
+    
+* What are his conclusions?  
+    + The 0.08 threshold leads to a 2\% point decline in recidivism for the next four years. The 0.15 aggrevated DUI cutoff corresponds to an additional percentage point decline.
+    + The reduction in repeated drunk driving can be explained via deterrence channel. Those above the threshold are more likely to receive a harsher punishment: higher fines, longer jail time, etc.
+    + This study presents evidence that reducing the BAC threshold or internalizing the costs of drunk driving by higher fines can be effective policies and curb DUI incidents.  
+    
+## Part 2: Reproducing Hansen’s Results
+
+```{r load_packages, warning=FALSE, warning=FALSE, message=FALSE}
+library(haven)
+library(tidyverse)
+library(stargazer)
+library(estimatr)
+library(rdd)
+library(rdrobust)
+library(rddensity)
+library(knitr)
+library(ggplot2) 
+library(png)
+library(KernSmooth)
+library(locfit)
+library(readr)
+library(gridExtra)
+```
+
+
+**3. Create a dummy equaling 1 if bac1>= 0.08 and 0 otherwise in your do file or R file.**
+
+```{r read_data, exercise=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+hansen <- read_dta("../../data/hansen_dwi.dta")
+hansen$dui08 <- ifelse(hansen$bac1 >= 0.08, 1, 0)
+hansen$bac1sq = hansen$bac1 * hansen$bac1
+```
+
+
+**4. Do you find evidence for sorting on the running variable?**
+
+```{r pmc}
+p_mccrary = DCdensity(hansen$bac1, 
+                      cutpoint = 0.08,
+                      plot = FALSE)
+```
+
+* The McCrary density test with default settings in DCdensity function gives a p-value of $`r round(p_mccrary, 8)` <0.01$. This indicates that there is strong evidence of self sorting in the data.
+
+```{r mcgraph2, message=FALSE, warning=FALSE, fig.keep='last', results='hide'}
+density02 <- rddensity(hansen$bac1, c = 0.08, p=2, h=0.02)
+rdplotdensity(density02, 
+              hansen$bac1,
+              plotN = 10,
+              histBreaks= seq(from = 0, to =0.3 , by = 0.0039),
+              histFillShade = 0.8)
+
+```
+
+* For bandwidth equals 0.02 on the two sides of the cutoff, the model does not catch any sign of manipulation. Meanwhile, as we go towards a lower bandwidth (say 0.01), there seems to be a difference between the two sides. The right side of 0.08 starts with a big jump in density in comparison to the left side.
+
+```{r mcgraph1, fig.keep='last', results = 'hide', warning=FALSE, message=FALSE}
+density01 <- rddensity(hansen$bac1, c = 0.08, p=2, h=0.01)
+rdplotdensity(density01, 
+              hansen$bac1,
+              plotN = 10,
+              histBreaks= seq(from = 0, to =0.3 , by = 0.0039),
+              histFillShade = 0.8)
+```
+
+
+* A similar jump is also visible in the Histogram of BAC levels when we have a large number of bins. This contradicts with what Hansen shows in his Figure 1 on page 1587.
+
+* It is important to note, however, that we are only looking at a single BAC test. In reality, these tests are conducted twice and the lower value is considered to be the true one. So, a more realistic approach would be to look at signs of manipulation in the minimum of the two (bac1 and bac2) instead of in one of them as we are doing here for the sake of simplicity.
+
+```{r hist_bac, exercise=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+hist(hansen$bac1,
+     main="Histogram for BAC Levels Recorded in DUI Stops", 
+     xlab="BAC",
+     breaks = 40000)
+abline(v = 0.08, col= 'red')
+```
+
+**5. Are the covariates balanced at the cutoff? **
+
+```{r cov_bal_rdest, exercise=TRUE, echo=TRUE, warning=FALSE, message=FALSE, results='asis'}
+lincb_male  <- RDestimate(male ~ bac1, data = hansen, 
+                          cutpoint = 0.08, bw = 0.05, kernel = "rectangular")
+lincb_white <- RDestimate(white ~ bac1, data = hansen, 
+                          cutpoint = 0.08, bw = 0.05, kernel = "rectangular")
+lincb_age   <- RDestimate(aged ~ bac1, data = hansen, 
+                          cutpoint = 0.08, bw = 0.05, kernel = "rectangular")
+lincb_acc   <- RDestimate(acc ~ bac1, data = hansen, 
+                          cutpoint = 0.08, bw = 0.05, kernel = "rectangular")
+
+late_male  = lincb_male$est[1]
+late_white = lincb_white$est[1]
+late_age   = lincb_age$est[1]
+late_acc   = lincb_acc$est[1]
+
+p_male  = lincb_acc$p[1]
+p_white = lincb_white$p[1]
+p_age   = lincb_age$p[1]
+p_acc   = lincb_acc$p[1]
+```
+
+| Variable        | LATE Estimate    |  p value       |
+|-----------------|------------------|----------------|
+|  Male           | $`r late_male`$  |  $`r p_male`$  |
+|  White          | $`r late_white`$ |  $`r p_white`$ |
+|  Age            | $`r late_age`$   |  $`r p_age`$   |
+|  Accident       | $`r late_acc`$   |  $`r p_acc`$   |
+
+* Above is the LATE estimates we get using the RDestimate package. They are not not statistically different from zero suggesting the covariates are balanced at the cutoff 0.08. The results are similar to those of Hansen in Table 2.
+
+```{r cov_bal_lm, exercise=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+hansen$bac_centered <- hansen$bac1 - 0.08 
+weights <- rdd::kernelwts(hansen$bac_centered, 
+                          center = 0, 
+                          bw = .05, 
+                          kernel = "rectangular")
+
+lmlin_male  <- lm_robust(male ~  bac_centered + dui08 + bac_centered*dui08, 
+                         data = hansen, weights = weights)
+lmlin_white <- lm_robust(white ~ bac_centered + dui08 + bac_centered*dui08, 
+                         data = hansen, weights = weights)
+lmlin_aged  <- lm_robust(aged ~ bac_centered + dui08 + bac_centered*dui08, 
+                         data = hansen, weights = weights)
+lmlin_acc   <- lm_robust(acc ~ bac_centered + dui08 + bac_centered*dui08, 
+                         data = hansen, weights = weights)
+texreg::screenreg(list(lmlin_male, lmlin_white, lmlin_aged, lmlin_acc),
+                  custom.model.names = c("Male", "White", "Age", "Accident"))
+```
+
+* In the table above, we are interested in the coefficients for the dui08 term (dummy variable indicating whether BAC is above or below 0.08). We see that the coefficient for the threshold dummy is not significant for any of the variables.
+
+* Although the slope changes at the threshold 0.08, it does so continuously without jumps in the data.
+  
+**6. Recreate Figure 2 panel A-D. Fit both linear and quadratic with confidence intervals. **
+
+```{r cov_rdp, exercise=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+
+rdplot(x = hansen$bac1, y = hansen$male, c = 0.08, p=1, kernel = "triangular",
+       title = "Male Cov Balance Linear",y.label = "Male", x.label = "BAC")
+rdplot(x = hansen$bac1, y = hansen$male, c = 0.08, p=2, kernel = "triangular",
+       title = "Male Cov Balance Quadratic",y.label = "Male", x.label = "BAC")
+
+rdplot(x = hansen$bac1, y = hansen$white, c = 0.08, p=1, kernel = "triangular",
+       title = "White Cov Balance Linear",y.label = "White", x.label = "BAC")
+rdplot(x = hansen$bac1, y = hansen$white, c = 0.08, p=2, kernel = "triangular",
+       title = "White Cov Balance Quadratic",y.label = "White", x.label = "BAC")
+
+
+rdplot(x = hansen$bac1, y = hansen$aged, c = 0.08, p=1, kernel = "triangular",
+       title = "Age Cov Balance Linear",y.label = "Age", x.label = "BAC")
+rdplot(x = hansen$bac1, y = hansen$aged, c = 0.08, p=2, kernel = "triangular",
+       title = "Age Cov Balance Quadratic",y.label = "Age", x.label = "BAC")
+
+rdplot(x = hansen$bac1, y = hansen$acc, c = 0.08, p=1, kernel = "triangular",
+       title = "Accident Cov Balance Linear",y.label = "Accident", x.label = "BAC")
+rdplot(x = hansen$bac1, y = hansen$acc, c = 0.08, p=2, kernel = "triangular",
+       title = "Accident Cov Balance Quadratic",y.label = "Accident", x.label = "BAC")
+
+```
+
+* We again observe smooth transitions from not DUI to DUI across all the four characteristics in question.
+
+* The rdplot function does not work well with showing confidence intervals. So, I will do that manually below:
+
+```{r quad_model, exercise=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+
+hansen$bac_centered2 <- hansen$bac_centered * hansen$bac_centered
+
+sq_male  <- lm_robust(male ~  bac_centered + bac_centered2 + dui08 +
+                         bac_centered*dui08 + bac_centered2*dui08, 
+                       data = hansen, weights = weights)
+sq_white <- lm_robust(white ~ bac_centered + bac_centered2 + dui08 +
+                        bac_centered*dui08 + bac_centered2*dui08, 
+                       data = hansen, weights = weights)
+sq_age   <- lm_robust(aged ~ bac_centered + bac_centered2 + dui08 +
+                        bac_centered*dui08 + bac_centered2*dui08, 
+                       data = hansen, weights = weights)
+sq_acc   <- lm_robust(acc ~ bac_centered + bac_centered2 + dui08 +
+                        bac_centered*dui08 + bac_centered2*dui08, 
+                       data = hansen, weights = weights)
+texreg::screenreg(list(sq_male, sq_white, sq_age, sq_acc), 
+                  custom.model.names = c("Male", "White", "Age", "Accident"))
+```
+
+```{r build_grid, exercise=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+
+grid_bac <- hansen %>%
+  mutate(bacbin = cut(bac1, breaks = 
+                      seq(from = -0.01, to = 4.01, by = 0.01))) %>%
+  group_by(bacbin) %>%
+  summarize(bac1 = mean(bac1, na.rm = TRUE),
+            mean_recid = mean(recidivism, na.rm = TRUE),
+            mean_male = mean(male, na.rm = TRUE),
+            mean_white = mean(white, na.rm = TRUE),
+            mean_age = mean(aged, na.rm = TRUE),
+            mean_acc = mean(acc, na.rm = TRUE))
+
+grid_bac$dui08 <- ifelse(grid_bac$bac1 >= 0.08, 1, 0)
+grid_bac$bac_centered  <- grid_bac$bac1 - 0.08
+grid_bac$bac_centered2 <- grid_bac$bac_centered * grid_bac$bac_centered
+
+pred_male <- predict(sq_male, grid_bac, interval="prediction")$fit
+pred_white <- predict(sq_white, grid_bac, interval="prediction")$fit
+pred_age <- predict(sq_age, grid_bac, interval="prediction")$fit
+pred_acc <- predict(sq_acc, grid_bac, interval="prediction")$fit
+```
+
+
+```{r sq_cov, echo=TRUE, message=FALSE, warning=FALSE, exercise=TRUE}
+par(mfrow=c(2,2))
+
+plot(grid_bac$bac1, grid_bac$mean_male,
+     main = "Panel A. Male",
+     xlab = "bac level", ylab = "ratio male")
+polygon(c(rev(grid_bac$bac1), grid_bac$bac1), 
+        c(rev(pred_male[,3]), pred_male[,2]), 
+        col=adjustcolor("grey80",alpha.f=0.5), border = NA)
+lines(grid_bac$bac1, pred_male[,1], col=4)
+lines(grid_bac$bac1, pred_male[,2], lty = 'dashed', col=2)
+lines(grid_bac$bac1, pred_male[,3], lty = 'dashed', col=2)
+abline(v = 0.08, col= 1)
+
+plot(grid_bac$bac1, grid_bac$mean_white,
+     main = "Panel B. White",
+     xlab = "bac level", ylab = "ratio white")
+polygon(c(rev(grid_bac$bac1), grid_bac$bac1), 
+        c(rev(pred_white[ ,3]), pred_white[ ,2]), 
+        col=adjustcolor("grey80",alpha.f=0.5), border = NA)
+lines(grid_bac$bac1, pred_white[,1], col=4)
+lines(grid_bac$bac1, pred_white[,2], lty = 'dashed', col=2)
+lines(grid_bac$bac1, pred_white[,3], lty = 'dashed', col=2)
+abline(v = 0.08, col= 1)
+
+plot(grid_bac$bac1, grid_bac$mean_age,
+     main = "Panel C. Age",
+     xlab = "bac level", ylab = "average age")
+polygon(c(rev(grid_bac$bac1), grid_bac$bac1), 
+        c(rev(pred_age[ ,3]), pred_age[ ,2]), 
+        col=adjustcolor("grey80",alpha.f=0.5), border = NA)
+lines(grid_bac$bac1, pred_age[,1], col=4)
+lines(grid_bac$bac1, pred_age[,2], lty = 'dashed', col=2)
+lines(grid_bac$bac1, pred_age[,3], lty = 'dashed', col=2)
+abline(v = 0.08, col= 1)
+
+plot(grid_bac$bac1, grid_bac$mean_acc,
+     main = "Panel D. Accident",
+     xlab = "bac level", ylab = "ratio with acc")
+polygon(c(rev(grid_bac$bac1), grid_bac$bac1), 
+        c(rev(pred_acc[ ,3]), pred_acc[ ,2]), 
+        col=adjustcolor("grey80",alpha.f=0.5), border = NA)
+lines(grid_bac$bac1, pred_acc[,1], col=4)
+lines(grid_bac$bac1, pred_acc[,2], lty = 'dashed', col=2)
+lines(grid_bac$bac1, pred_acc[,3], lty = 'dashed', col=2)
+abline(v = 0.08, col= 1)
+
+```
+
+**7. Estimate equation (1) with recidivism (recid) as the outcome: Table 3 column 1 **
+
+* yo
+
+```{r table3, echo=TRUE, message=FALSE, warning=FALSE, exercise=TRUE}
+panelA_03 <- subset(hansen, bac1 >= 0.03  & bac1 <= 0.13)
+panelB_05 <- subset(hansen, bac1 >= 0.055 & bac1 <= 0.105)
+
+#Panel A
+
+A_weights <- rdd::kernelwts(panelA_03$bac_centered, center = 0, 
+                            bw = .05, kernel = "rectangular")
+
+A_recid_lin0  <- lm_robust(recidivism ~  bac_centered, 
+                           data = panelA_03, weights = A_weights)
+A_recid_lin1 <- lm_robust(recidivism ~ bac_centered + dui08 + bac_centered*dui08,
+                          data = panelA_03, weights = A_weights)
+A_recid_sq   <- lm_robust(recidivism ~ bac_centered + bac_centered2 + dui08 +
+                          bac_centered*dui08 + bac_centered2*dui08, 
+                          data = panelA_03, weights = A_weights)
+
+texreg::screenreg(list(A_recid_lin0, A_recid_lin1, A_recid_sq), 
+                  custom.model.names = c("A. Linear", "A. Line + Cutoff", "A. Quad + Cutoff"))
+
+# Panel B
+
+B_weights <- rdd::kernelwts(panelB_05$bac_centered, center = 0, 
+                            bw = .05, kernel = "rectangular")
+
+B_recid_lin0  <- lm_robust(recidivism ~  bac_centered, 
+                           data = panelB_05, weights = B_weights)
+B_recid_lin1 <- lm_robust(recidivism ~ bac_centered + dui08 + bac_centered*dui08,
+                          data = panelB_05, weights = B_weights)
+B_recid_sq   <- lm_robust(recidivism ~ bac_centered + bac_centered2 + dui08 +
+                            bac_centered*dui08 + bac_centered2*dui08, 
+                          data = panelB_05, weights = B_weights)
+
+texreg::screenreg(list(B_recid_lin0, B_recid_lin1, B_recid_sq), 
+                  custom.model.names = c("B. Linear", "B. Line + Cutoff", "B. Quad + Cutoff"))
+
+```
+
+**8. Recreate the top panel of Figure 3.**
+
+```{r recid_rdd, echo=TRUE, message=FALSE, warning=FALSE, exercise=TRUE}
+hansen_q8 <- subset(hansen, bac1 < 0.15)
+
+rdplot(x = hansen_q8$bac1, y = hansen_q8$recidivism, c = 0.08, p=1, kernel = "triangular",
+       title = "Impact of 0.08 BAC cutoff on Recidivism (Linear Trend)",y.label = "Recidivism", x.label = "BAC")
+
+rdplot(x = hansen_q8$bac1, y = hansen_q8$recidivism, c = 0.08, p=2, kernel = "triangular",
+       title = "Impact of 0.08 BAC cutoff on Recidivism (Quadratic Trend)",y.label = "Recidivism", x.label = "BAC")
+
+```
+
+* We can see a shard disconnect especially in the linear trend graph. In the quadratic trend, there is again a disconnect but not as defined.
+
+```{r recid_manual, echo=TRUE, message=FALSE, warning=FALSE, exercise=TRUE}
+grid_bac <- subset(grid_bac, bac1 < 0.15)
+
+q8_weights <- rdd::kernelwts(hansen_q8$bac_centered, center = 0, 
+                            bw = .05, kernel = "rectangular")
+
+q8_recid_lin1 <- lm_robust(recidivism ~ bac_centered + dui08 + bac_centered*dui08,
+                          data = hansen_q8, weights = q8_weights)
+
+q8_recid_sq   <- lm_robust(recidivism ~ bac_centered + bac_centered2 + dui08 + 
+                             bac_centered*dui08 + bac_centered2*dui08, 
+                           data = hansen_q8, weights = q8_weights)
+
+predlin_recid <- predict(q8_recid_lin1, grid_bac, interval="prediction")$fit
+predsq_recid  <- predict(q8_recid_sq, grid_bac, interval="prediction")$fit
+
+plot(grid_bac$bac1, grid_bac$mean_recid,
+     main = "Panel A. Recidivism with Linear Trend",
+     xlab = "bac level", ylab = "ratio of recidivism")
+polygon(c(rev(grid_bac$bac1), grid_bac$bac1), 
+        c(rev(predlin_recid[,3]), predlin_recid[,2]), 
+        col=adjustcolor("grey80",alpha.f=0.5), border = NA)
+lines(grid_bac$bac1, predlin_recid[,1], col=4)
+lines(grid_bac$bac1, predlin_recid[,2], lty = 'dashed', col=2)
+lines(grid_bac$bac1, predlin_recid[,3], lty = 'dashed', col=2)
+abline(v = 0.08, col= 1)
+
+plot(grid_bac$bac1, grid_bac$mean_recid,
+     main = "Panel B. Recidivism with Quadratic Trend",
+     xlab = "bac level", ylab = "ratio of recidivism")
+polygon(c(rev(grid_bac$bac1), grid_bac$bac1), 
+        c(rev(predsq_recid[ ,3]), predsq_recid[ ,2]), 
+        col=adjustcolor("grey80",alpha.f=0.5), border = NA)
+lines(grid_bac$bac1, predsq_recid[,1], col=4)
+lines(grid_bac$bac1, predsq_recid[,2], lty = 'dashed', col=2)
+lines(grid_bac$bac1, predsq_recid[,3], lty = 'dashed', col=2)
+abline(v = 0.08, col= 1)
+```
+
+
+**9. Discuss what you learned from this exercise.**
+
+  + Coding: I learned how to use the predict function in different ways and make fitted value graphs in base r and shade the confidence interval.
+    
+  + Analysis: I learned that in RDD what matters is the change in intercept not the slope (LATE).
+    
+* What was the hypothesis you tested and what did you find?
+
+    + I tested whether the 0.08 Blood Alcohol Content cutoff in ticketing drivers for DUI has an impact on curbing drunk driving.
+    
+    + More specifically, we tested whether or not it has an influence on the behaviors of previous offenders.
+    
+    + This is a specific channel the cutoff can play a role. It can influence behavior of those who have not previously received a ticket for DUI as well.
+    
+    + We found that this cutoff reduces the probability of recidivism (repeated DUI) by about two percent on average.
+
+* How confident are you in Hansen’s original conclusion? Why/why not?
+
+    + I am less confident now than I was first time I read the paper. I found some evidence for self sorting in the data. And, the jump in the cutoff does not seem to be significant when we incorporate a quadratic trend of Recidivism in BAC. 
+    
+    + Furthermore, I am not very convinced that all the covariates are balanced. Especiall Age and Accident came out barely balanced around the cutoff. There might be other characteristics endogenous to being considered a DUI incident for BAC values near 0.08.
+    
+
+
